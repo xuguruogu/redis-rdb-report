@@ -83,31 +83,7 @@ func main() {
 	reportSummary()
 	reportType()
 	reportSize()
-}
-
-func reportSize() {
-	var gSize plotter.Values
-	for i := range gString {
-		gSize = append(gSize, gString[i]+gHash[i]+gList[i]+gSet[i]+gZset[i])
-	}
-
-	p, _ := plot.New()
-	p.Title.Text = fmt.Sprintf("value mem/total mem: %.2f%%", 15.10621762)
-	p.Y.Label.Text = "mem/total * 100%"
-
-	w := vg.Points(20)
-
-	barSize, _ := plotter.NewBarChart(gSize, w)
-	barSize.LineStyle.Width = vg.Length(0)
-	barSize.Color = plotutil.Color(6)
-
-	p.Add(barSize)
-
-	//128  4K  32K   128K  512K  2M    32M   128M  512M  INF
-	p.NominalX("1 ~ 128", "128 ~ 4K", "4K ~ 32K", "32K ~ 128K", "128K ~ 512K", "512K ~ 2M", "2M ~ 32M", "32M ~ 128M", "128M ~ 512M", "512M ~ INF")
-	if err := p.Save(12*vg.Inch, 7*vg.Inch, "size.png"); err != nil {
-		panic(err)
-	}
+	reportSizeLine()
 }
 
 func reportType() {
@@ -143,7 +119,7 @@ func reportType() {
 	p.Add(bargSummary)
 
 	p.NominalX("string", "hash", "list", "set", "zset")
-	if err := p.Save(12*vg.Inch, 7*vg.Inch, "type.png"); err != nil {
+	if err := p.Save(12*vg.Inch, 7*vg.Inch, "summary_type.png"); err != nil {
 		panic(err)
 	}
 }
@@ -190,6 +166,73 @@ func reportSummary() {
 	//128  4K  32K   128K  512K  2M    32M   128M  512M  INF
 	p.NominalX("1 ~ 128", "128 ~ 4K", "4K ~ 32K", "32K ~ 128K", "128K ~ 512K", "512K ~ 2M", "2M ~ 32M", "32M ~ 128M", "128M ~ 512M", "512M ~ INF")
 	if err := p.Save(12*vg.Inch, 7*vg.Inch, "summary.png"); err != nil {
+		panic(err)
+	}
+}
+
+func reportSize() {
+	var gSize plotter.Values
+	for i := range gString {
+		size := gString[i] + gHash[i] + gList[i] + gSet[i] + gZset[i]
+		gSize = append(gSize, size)
+	}
+
+	p, _ := plot.New()
+	p.Title.Text = fmt.Sprintf("value mem/total mem: %.2f%%", 15.10621762)
+	p.Y.Label.Text = "mem/total * 100%"
+
+	// Draw a grid behind the data
+	p.Add(plotter.NewGrid())
+
+	w := vg.Points(20)
+
+	barSize, _ := plotter.NewBarChart(gSize, w)
+	barSize.LineStyle.Width = vg.Length(0)
+	barSize.Color = plotutil.Color(6)
+
+	p.Add(barSize)
+
+	//128  4K  32K   128K  512K  2M    32M   128M  512M  INF
+	p.NominalX("1 ~ 128", "128 ~ 4K", "4K ~ 32K", "32K ~ 128K", "128K ~ 512K", "512K ~ 2M", "2M ~ 32M", "32M ~ 128M", "128M ~ 512M", "512M ~ INF")
+	if err := p.Save(12*vg.Inch, 7*vg.Inch, "summary_size.png"); err != nil {
+		panic(err)
+	}
+}
+
+func reportSizeLine() {
+	var gSize plotter.Values
+	for i := range gString {
+		size := gString[i] + gHash[i] + gList[i] + gSet[i] + gZset[i]
+		gSize = append(gSize, size)
+	}
+
+	var gSizeAccumulative plotter.XYs
+	var total float64
+	for i, v := range gSize {
+		total += v
+		gSizeAccumulative = append(gSizeAccumulative, plotter.XY{float64(i), total})
+	}
+
+	p, _ := plot.New()
+
+	p.Title.Text = fmt.Sprintf("accumulative\nvalue mem/total mem: %.2f%%", 15.10621762)
+	p.Y.Label.Text = "accumulative mem/total * 100%"
+
+	p.Legend.Left = true
+	p.Legend.Top = true
+
+	// Draw a grid behind the data
+	p.Add(plotter.NewGrid())
+
+	//128  4K  32K   128K  512K  2M    32M   128M  512M  INF
+	p.NominalX("1 ~ 128", "128 ~ 4K", "4K ~ 32K", "32K ~ 128K", "128K ~ 512K", "512K ~ 2M", "2M ~ 32M", "32M ~ 128M", "128M ~ 512M", "512M ~ INF")
+
+	err := plotutil.AddLinePoints(p, "accumulative", gSizeAccumulative)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := p.Save(12*vg.Inch, 7*vg.Inch, "summary_size_accumulative.png"); err != nil {
 		panic(err)
 	}
 }
