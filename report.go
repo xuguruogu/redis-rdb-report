@@ -22,7 +22,11 @@ func (r *RdbReport) reportBid() {
 	}
 
 	for bid, l := range r.bidSizeMap {
-		fmt.Println(bid, l, float64(l)/float64(total))
+		fmt.Println(bid, ": ", l, float64(l)/float64(total))
+	}
+
+	for bid, s := range r.bidNoExpiryMap {
+		fmt.Println("no expiry: ", bid, ": ", s)
 	}
 }
 
