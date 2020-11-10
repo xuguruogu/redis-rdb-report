@@ -23,7 +23,7 @@ github.com/jung-kurt/gofpdf
 # github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 ## explicit
 github.com/op/go-logging
-# github.com/xuguruogu/rdb v0.0.0-20170822101532-f31cf7a0c8d0
+# github.com/xuguruogu/rdb v0.0.0-20201110042424-003bb142a0e9
 ## explicit
 github.com/xuguruogu/rdb
 github.com/xuguruogu/rdb/crc64
