@@ -33,7 +33,10 @@ func main() {
 	}
 	defer f.Close()
 
-	report := &RdbReport{}
+	report := &RdbReport{
+		bidSizeMap:     make(map[uint16]uint64),
+		bidNoExpiryMap: make(map[uint16]uint64),
+	}
 
 	if err := rdb.Decode(f, report); err != nil {
 		log.Errorf("decode rdb file %s failed, err: %+v", file, err)
