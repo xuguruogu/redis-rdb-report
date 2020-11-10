@@ -12,6 +12,18 @@ import (
 // Report ...
 func (r *RdbReport) Report() {
 	r.reportMem()
+	r.reportBid()
+}
+
+func (r *RdbReport) reportBid() {
+	var total uint64
+	for _, v := range r.bidSizeMap {
+		total += v
+	}
+
+	for bid, l := range r.bidSizeMap {
+		fmt.Println(bid, l, float64(l)/float64(total))
+	}
 }
 
 func (r *RdbReport) reportMem() {

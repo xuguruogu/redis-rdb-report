@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"flag"
 	"os"
 
@@ -46,20 +47,26 @@ func main() {
 
 // RdbReport ...
 type RdbReport struct {
-	cnt      uint64
-	keyLen   uint64
-	valueLen uint64
-	mString  memHistogram
-	mHash    memHistogram
-	cHash    countHistogram
-	mList    memHistogram
-	cList    countHistogram
-	mSet     memHistogram
-	cSet     countHistogram
-	mZset    memHistogram
-	cZset    countHistogram
-	vl       uint64
-	ll       uint64
+	cnt            uint64
+	keyLen         uint64
+	valueLen       uint64
+	mString        memHistogram
+	mHash          memHistogram
+	cHash          countHistogram
+	mList          memHistogram
+	cList          countHistogram
+	mSet           memHistogram
+	cSet           countHistogram
+	mZset          memHistogram
+	cZset          countHistogram
+	vl             uint64
+	ll             uint64
+	bidSizeMap     map[uint16]uint64
+	bidNoExpiryMap map[uint16]uint64
+}
+
+func getBid(key []byte) uint16 {
+	return binary.LittleEndian.Uint16(key[0:2])
 }
 
 // StartRDB is called when parsing of a valid RDB file starts.
@@ -92,6 +99,10 @@ func (r *RdbReport) Set(key, value []byte, expiry int64) error {
 	vl := uint64(len(value))
 	r.valueLen += vl
 	r.mString.add(vl)
+	if expiry == 0 {
+		r.bidNoExpiryMap[getBid(key)]++
+	}
+	r.bidSizeMap[getBid(key)] += uint64(len(key) + len(value) + 8)
 	return nil
 }
 
@@ -102,6 +113,10 @@ func (r *RdbReport) StartHash(key []byte, length, expiry int64) error {
 	r.keyLen += uint64(len(key) + 45)
 	r.vl = 0
 	r.ll = 0
+	if expiry == 0 {
+		r.bidNoExpiryMap[getBid(key)]++
+	}
+	r.bidSizeMap[getBid(key)] += uint64(len(key) + 8)
 	return nil
 }
 
@@ -109,6 +124,7 @@ func (r *RdbReport) StartHash(key []byte, length, expiry int64) error {
 func (r *RdbReport) Hset(key, field, value []byte) error {
 	r.vl += uint64(len(field) + len(value) + 38)
 	r.ll++
+	r.bidSizeMap[getBid(key)] += uint64(len(field) + len(value))
 	return nil
 }
 
@@ -127,6 +143,10 @@ func (r *RdbReport) StartSet(key []byte, cardinality, expiry int64) error {
 	r.keyLen += uint64(len(key) + 45)
 	r.vl = 0
 	r.ll = 0
+	if expiry == 0 {
+		r.bidNoExpiryMap[getBid(key)]++
+	}
+	r.bidSizeMap[getBid(key)] += uint64(len(key) + 8)
 	return nil
 }
 
@@ -134,6 +154,7 @@ func (r *RdbReport) StartSet(key []byte, cardinality, expiry int64) error {
 func (r *RdbReport) Sadd(key, member []byte) error {
 	r.vl += uint64(len(member) + 38)
 	r.ll++
+	r.bidSizeMap[getBid(key)] += uint64(len(member))
 	return nil
 }
 
@@ -153,6 +174,10 @@ func (r *RdbReport) StartList(key []byte, length, expiry int64) error {
 	r.keyLen += uint64(len(key) + 45)
 	r.vl = 0
 	r.ll = 0
+	if expiry == 0 {
+		r.bidNoExpiryMap[getBid(key)]++
+	}
+	r.bidSizeMap[getBid(key)] += uint64(len(key) + 8)
 	return nil
 }
 
@@ -160,6 +185,7 @@ func (r *RdbReport) StartList(key []byte, length, expiry int64) error {
 func (r *RdbReport) Rpush(key, value []byte) error {
 	r.vl += uint64(len(value) + 19)
 	r.ll++
+	r.bidSizeMap[getBid(key)] += uint64(len(value))
 	return nil
 }
 
@@ -178,6 +204,10 @@ func (r *RdbReport) StartZSet(key []byte, cardinality, expiry int64) error {
 	r.keyLen += uint64(len(key) + 45)
 	r.vl = 0
 	r.ll = 0
+	if expiry == 0 {
+		r.bidNoExpiryMap[getBid(key)]++
+	}
+	r.bidSizeMap[getBid(key)] += uint64(len(key) + 8)
 	return nil
 }
 
@@ -185,6 +215,7 @@ func (r *RdbReport) StartZSet(key []byte, cardinality, expiry int64) error {
 func (r *RdbReport) Zadd(key []byte, score float64, member []byte) error {
 	r.vl += uint64(len(member) + 69 + 8)
 	r.ll++
+	r.bidSizeMap[getBid(key)] += uint64(len(member) + 8)
 	return nil
 }
 
