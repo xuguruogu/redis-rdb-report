@@ -69,8 +69,8 @@ type RdbReport struct {
 }
 
 func getBid(key []byte) uint16 {
-	if len(key) >= 1 {
-		return binary.LittleEndian.Uint16(key[0:1])
+	if len(key) >= 2 {
+		return binary.LittleEndian.Uint16(key[0:2])
 	} else {
 		return 0
 	}
