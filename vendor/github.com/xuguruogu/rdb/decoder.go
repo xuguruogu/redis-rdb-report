@@ -115,6 +115,7 @@ const (
 	TypeSet    ValueType = 2
 	TypeZSet   ValueType = 3
 	TypeHash   ValueType = 4
+	TypeZSet2  ValueType = 5
 
 	TypeHashZipmap    ValueType = 9
 	TypeListZiplist   ValueType = 10
@@ -310,7 +311,7 @@ func (d *decode) readObject(key []byte, typ ValueType, expiry int64) error {
 		if err := d.event.EndSet(key); err != nil {
 			return err
 		}
-	case TypeZSet:
+	case TypeZSet, TypeZSet2:
 		cardinality, _, err := d.readLength()
 		if err != nil {
 			return err
@@ -323,7 +324,14 @@ func (d *decode) readObject(key []byte, typ ValueType, expiry int64) error {
 			if err != nil {
 				return err
 			}
-			score, err := d.readFloat64()
+
+			var float64 score
+			if typ == TypeZSet2 {
+				score, err = d.readBinaryFloat64()
+			} else {
+				score, err = d.readFloat64()
+			}
+
 			if err != nil {
 				return err
 			}
@@ -828,6 +836,14 @@ func (d *decode) readFloat64() (float64, error) {
 	}
 
 	panic("not reached")
+}
+
+func (d *decode) readBinaryFloat64() (float64, error) {
+	_, err := io.ReadFull(d.r, d.intBuf[0:8])
+	if err != nil {
+		return 0, err
+	}
+	return math.Float64frombits(d.intBuf), nil
 }
 
 func (d *decode) readLength() (uint32, bool, error) {
