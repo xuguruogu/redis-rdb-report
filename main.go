@@ -69,7 +69,7 @@ type RdbReport struct {
 }
 
 func getBid(key []byte) uint16 {
-	return binary.LittleEndian.Uint16(key[0:2])
+	return binary.LittleEndian.Uint16(key[0:1])
 }
 
 // StartRDB is called when parsing of a valid RDB file starts.
